@@ -4,11 +4,11 @@
 
     Class based views for the Flask microframework.
 
-    :copyright: (c) 2013 by Freedom Dumlao.
+    :copyright: (c) 2014 by Freedom Dumlao.
     :license: BSD, see LICENSE for more details.
 """
 
-__version__ = "0.6.8"
+__version__ = "0.6.10"
 
 import sys
 import functools
@@ -308,19 +308,14 @@ def get_true_argspec(method):
         inner_method = cell.cell_contents
         if inner_method is method:
             continue
-        if not inspect.isfunction(inner_method) \
-            and not inspect.ismethod(inner_method):
+        try:
+            true_argspec = get_true_argspec(inner_method)
+            if true_argspec:
+                return true_argspec
+        except TypeError:
+            # not a callable cell
             continue
-        true_argspec = get_true_argspec(inner_method)
-        if true_argspec:
-            return true_argspec
 
 
 class DecoratorCompatibilityError(Exception):
     pass
-
-
-
-
-
-
