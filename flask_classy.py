@@ -6,6 +6,8 @@
 
     :copyright: (c) 2014 by Freedom Dumlao.
     :license: BSD, see LICENSE for more details.
+    
+    Modified by Ben Katz to support passing constructor arguments to FlaskViews.
 """
 
 __version__ = "0.6.10"
@@ -51,13 +53,15 @@ class FlaskView(object):
     trailing_slash = True
 
     @classmethod
-    def register(cls, app, route_base=None, subdomain=None, route_prefix=None,
+    def register(cls, app, *args, route_base=None, subdomain=None, route_prefix=None,
                  trailing_slash=None):
         """Registers a FlaskView class for use with a specific instance of a
         Flask app. Any methods not prefixes with an underscore are candidates
         to be routed and will have routes registered when this method is
         called.
 
+        :param trailing_slash:
+        :param args: array of arguments to pass to the flask view class
         :param app: an instance of a Flask application
 
         :param route_base: The base path to use for all routes registered for
@@ -97,8 +101,14 @@ class FlaskView(object):
         members = get_interesting_members(FlaskView, cls)
         special_methods = ["get", "put", "patch", "post", "delete", "index"]
 
+        i = None
+        if len(args) == 0:
+            i = cls(app)
+        else:
+            i = cls(app, *args)
+
         for name, value in members:
-            proxy = cls.make_proxy_method(name)
+            proxy = cls.make_proxy_method(name, i)
             route_name = cls.build_route_name(name)
             try:
                 if hasattr(value, "_rule_cache") and name in value._rule_cache:
@@ -163,15 +173,7 @@ class FlaskView(object):
 
 
     @classmethod
-    def make_proxy_method(cls, name):
-        """Creates a proxy function that can be used by Flasks routing. The
-        proxy instantiates the FlaskView subclass and calls the appropriate
-        method.
-
-        :param name: the name of the method to create a proxy for
-        """
-
-        i = cls()
+    def make_proxy_method(cls, name, i):
         view = getattr(i, name)
 
         if cls.decorators:
